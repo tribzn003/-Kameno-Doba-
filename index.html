@@ -1,1 +1,331 @@
+<!doctype html>
+<html lang="sr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Камено доба</title>
+  <style>
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    body { margin:0; overflow:hidden; background:#172025; color:white; font-family:Arial,sans-serif; }
+    canvas { display:block; }
+    #hud { position:fixed; inset:0; pointer-events:none; padding:14px; text-shadow:0 2px 3px #000; }
+    h1 { margin:0; font-size:25px; letter-spacing:1px; }
+    #level { color:#ffe28a; font-weight:bold; }
+    #score { position:absolute; top:14px; right:14px; text-align:right; font-size:17px; font-weight:bold; }
+    #message {
+      position:absolute; top:76px; left:0; right:0; text-align:center;
+      color:#ffe28a; font-size:20px; font-weight:bold; opacity:0; transition:.2s;
+    }
+    #panel {
+      position:fixed; left:8px; right:8px; bottom:9px; padding:9px;
+      background:#162026ed; border:1px solid #8f8368; border-radius:15px;
+    }
+    #info { margin:0 0 7px; color:#eee0bc; font-size:13px; font-weight:bold; }
+    #faces { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; }
+    .face {
+      height:47px; border:2px solid #656565; border-radius:8px;
+      background-image:url("assets/likovi-zatvor.png");
+      background-size:500% 300%; background-repeat:no-repeat; background-color:#333;
+    }
+    .face.active { border-color:#ffe176; box-shadow:0 0 9px #f6c94a; }
+    #buttons { display:flex; gap:7px; margin-top:9px; }
+    button {
+      flex:1; border:0; border-radius:10px; padding:14px 4px;
+      background:#61462f; color:white; font-weight:bold; font-size:14px;
+      box-shadow:0 3px 0 #2a1d13;
+    }
+    button:active { transform:translateY(3px); box-shadow:none; }
+    #throw { background:#93452e; }
+    #restart { background:#3c6074; max-width:82px; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <h1>КАМЕНО ДОБА</h1>
+    <div id="level">ДВОРИШТЕ 1</div>
+    <div id="score">ПОЕНИ: <span id="points">0</span><br>ПОГОДАК: <span id="hits">0</span>/10</div>
+    <div id="message"></div>
+  </div>
 
+  <div id="panel">
+    <p id="info">Изабери лика. Помери га и баци камен у бели круг.</p>
+    <div id="faces"></div>
+    <div id="buttons">
+      <button id="left">◀ ЛЕВО</button>
+      <button id="throw">БАЦИ КАМЕН</button>
+      <button id="right">ДЕСНО ▶</button>
+      <button id="restart">ПОНОВО</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x91a6ab);
+    scene.fog = new THREE.Fog(0x91a6ab, 18, 50);
+
+    const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(0, 10, 19);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.HemisphereLight(0xfff1d1, 0x2a342e, 2));
+
+    const sun = new THREE.DirectionalLight(0xffe3a9, 2);
+    sun.position.set(-9, 15, 8);
+    sun.castShadow = true;
+    scene.add(sun);
+
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(55, 45),
+      new THREE.MeshStandardMaterial({ color:0x8a826b, roughness:1 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    const wallMat = new THREE.MeshStandardMaterial({ color:0x6b6d69, roughness:1 });
+
+    [
+      [0, 2, -12, 25, 5, 0.7],
+      [0, 2, 10, 25, 5, 0.7],
+      [-12, 2, -1, 0.7, 5, 23],
+      [12, 2, -1, 0.7, 5, 23]
+    ].forEach(([x,y,z,w,h,d]) => {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), wallMat);
+      wall.position.set(x,y,z);
+      wall.castShadow = true;
+      wall.receiveShadow = true;
+      scene.add(wall);
+    });
+
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(2.05, 2.42, 48),
+      new THREE.MeshStandardMaterial({ color:0xf8e9bc, side:THREE.DoubleSide })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.03;
+    scene.add(ring);
+
+    const pointsEl = document.querySelector("#points");
+    const hitsEl = document.querySelector("#hits");
+    const levelEl = document.querySelector("#level");
+    const messageEl = document.querySelector("#message");
+    const facesEl = document.querySelector("#faces");
+
+    let actors = [];
+    let player;
+    let selected = 0;
+    let lane = 0;
+    let stone = null;
+    let points = 0;
+    let hits = 0;
+    let level = 1;
+
+    function say(text) {
+      messageEl.textContent = text;
+      messageEl.style.opacity = "1";
+      clearTimeout(say.timer);
+      say.timer = setTimeout(() => messageEl.style.opacity = "0", 1000);
+    }
+
+    function makeFaceTexture(sheet, number) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 128;
+      canvas.height = 128;
+
+      const col = number % 5;
+      const row = Math.floor(number / 5);
+
+      canvas.getContext("2d").drawImage(
+        sheet,
+        col * sheet.width / 5,
+        row * sheet.height / 3,
+        sheet.width / 5,
+        sheet.height / 3,
+        0, 0, 128, 128
+      );
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    }
+
+    function createActor(number, x, z, sheet) {
+      const group = new THREE.Group();
+
+      const uniform = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 1.45, 0.58),
+        new THREE.MeshStandardMaterial({ color:0x4c4d4b })
+      );
+      uniform.position.y = 1.25;
+      uniform.castShadow = true;
+
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.48, 20, 16),
+        new THREE.MeshStandardMaterial({ map:makeFaceTexture(sheet, number) })
+      );
+      head.position.y = 2.3;
+      head.castShadow = true;
+
+      group.add(uniform, head);
+      group.position.set(x, 0, z);
+      group.userData = { phase:number * 0.7, number };
+      scene.add(group);
+      actors.push(group);
+    }
+
+    function selectCharacter(number) {
+      selected = number;
+      player = actors[number];
+      lane = 0;
+
+      document.querySelectorAll(".face").forEach((button, index) => {
+        button.classList.toggle("active", index === number);
+      });
+
+      say("Лик је изабран");
+    }
+
+    function buildGame(sheet) {
+      for (let i = 0; i < 15; i++) {
+        const angle = (i / 15) * Math.PI * 2;
+        const x = Math.cos(angle) * 7.5;
+        const z = Math.sin(angle) * 4.8 - 1;
+
+        createActor(i, x, z, sheet);
+
+        const faceButton = document.createElement("button");
+        faceButton.className = i === 0 ? "face active" : "face";
+        faceButton.style.backgroundPosition =
+          `${-(i % 5) * 100}% ${-Math.floor(i / 5) * 100}%`;
+
+        faceButton.onclick = () => selectCharacter(i);
+        facesEl.appendChild(faceButton);
+      }
+
+      player = actors[0];
+    }
+
+    function move(direction) {
+      if (stone) return;
+
+      lane = Math.max(-1, Math.min(1, lane + direction));
+      player.position.x += direction * 2.3;
+      player.position.x = Math.max(-8, Math.min(8, player.position.x));
+    }
+
+    function throwStone() {
+      if (stone || hits >= 10) return;
+
+      stone = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.34),
+        new THREE.MeshStandardMaterial({ color:0x514b42, roughness:1 })
+      );
+
+      stone.position.copy(player.position);
+      stone.position.add(new THREE.Vector3(0, 1.8, -0.5));
+      stone.castShadow = true;
+
+      stone.userData = {
+        progress:0,
+        start:stone.position.clone(),
+        target:new THREE.Vector3(lane * 0.3, 0.23, 0)
+      };
+
+      scene.add(stone);
+    }
+
+    document.querySelector("#left").onclick = () => move(-1);
+    document.querySelector("#right").onclick = () => move(1);
+    document.querySelector("#throw").onclick = throwStone;
+
+    document.querySelector("#restart").onclick = () => {
+      points = 0;
+      hits = 0;
+      level = 1;
+      lane = 0;
+
+      pointsEl.textContent = "0";
+      hitsEl.textContent = "0";
+      levelEl.textContent = "ДВОРИШТЕ 1";
+
+      actors.forEach((actor, i) => {
+        const angle = (i / 15) * Math.PI * 2;
+        actor.position.set(Math.cos(angle) * 7.5, 0, Math.sin(angle) * 4.8 - 1);
+      });
+
+      player = actors[selected];
+      say("Игра поново почиње");
+    };
+
+    function resize() {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    }
+
+    addEventListener("resize", resize);
+    resize();
+
+    const image = new Image();
+
+    image.onload = () => {
+      buildGame(image);
+      say("Изабери лика и почни");
+    };
+
+    image.onerror = () => {
+      say("Недостаје слика: assets/likovi-zatvor.png");
+    };
+
+    image.src = "assets/likovi-zatvor.png";
+
+    function animate(time) {
+      requestAnimationFrame(animate);
+
+      actors.forEach(actor => {
+        if (actor !== player) {
+          actor.rotation.y = Math.sin(time / 700 + actor.userData.phase) * 0.45;
+        }
+      });
+
+      if (stone) {
+        stone.userData.progress += 0.034;
+        const progress = Math.min(stone.userData.progress, 1);
+
+        stone.position.lerpVectors(stone.userData.start, stone.userData.target, progress);
+        stone.position.y += Math.sin(progress * Math.PI) * 3.2;
+
+        if (progress === 1) {
+          points += 100;
+          hits += 1;
+
+          pointsEl.textContent = points;
+          hitsEl.textContent = hits;
+
+          if (hits === 10) {
+            level += 1;
+            levelEl.textContent = "ДВОРИШТЕ " + level;
+            say("НИВО ЗАВРШЕН!");
+          } else {
+            say("ПОГОДАК У КРУГ!");
+          }
+
+          scene.remove(stone);
+          stone = null;
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    animate(0);
+  </script>
+</body>
+</html>
