@@ -24,7 +24,7 @@
     #faces { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; }
     .face {
       height:47px; border:2px solid #656565; border-radius:8px;
-      background-image:url("assets/likovi-zatvor.png");
+      background-image:url("assets/79d88d54-4b24-434e-b227-df84f29aeec6.png");
       background-size:500% 300%; background-repeat:no-repeat; background-color:#333;
     }
     .face.active { border-color:#ffe176; box-shadow:0 0 9px #f6c94a; }
@@ -281,10 +281,10 @@
     };
 
     image.onerror = () => {
-      say("Недостаје слика: assets/likovi-zatvor.png");
+      say("Слика ликова није учитана");
     };
 
-    image.src = "assets/likovi-zatvor.png";
+    image.src = "assets/79d88d54-4b24-434e-b227-df84f29aeec6.png";
 
     function animate(time) {
       requestAnimationFrame(animate);
