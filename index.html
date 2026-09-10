@@ -5,38 +5,23 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <title>Камено доба</title>
   <style>
-    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-    body { margin:0; overflow:hidden; background:#172025; color:white; font-family:Arial,sans-serif; }
-    canvas { display:block; }
-    #hud { position:fixed; inset:0; pointer-events:none; padding:14px; text-shadow:0 2px 3px #000; }
-    h1 { margin:0; font-size:25px; letter-spacing:1px; }
-    #level { color:#ffe28a; font-weight:bold; }
-    #score { position:absolute; top:14px; right:14px; text-align:right; font-size:17px; font-weight:bold; }
-    #message {
-      position:absolute; top:76px; left:0; right:0; text-align:center;
-      color:#ffe28a; font-size:20px; font-weight:bold; opacity:0; transition:.2s;
-    }
-    #panel {
-      position:fixed; left:8px; right:8px; bottom:9px; padding:9px;
-      background:#162026ed; border:1px solid #8f8368; border-radius:15px;
-    }
-    #info { margin:0 0 7px; color:#eee0bc; font-size:13px; font-weight:bold; }
-    #faces { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; }
-    .face {
-      height:47px; border:2px solid #656565; border-radius:8px;
-      background-image:url("assets/79d88d54-4b24-434e-b227-df84f29aeec6.png");
-      background-size:500% 300%; background-repeat:no-repeat; background-color:#333;
-    }
-    .face.active { border-color:#ffe176; box-shadow:0 0 9px #f6c94a; }
-    #buttons { display:flex; gap:7px; margin-top:9px; }
-    button {
-      flex:1; border:0; border-radius:10px; padding:14px 4px;
-      background:#61462f; color:white; font-weight:bold; font-size:14px;
-      box-shadow:0 3px 0 #2a1d13;
-    }
-    button:active { transform:translateY(3px); box-shadow:none; }
-    #throw { background:#93452e; }
-    #restart { background:#3c6074; max-width:82px; }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{margin:0;overflow:hidden;background:#172025;color:#fff;font-family:Arial,sans-serif}
+    canvas{display:block}
+    #hud{position:fixed;inset:0;pointer-events:none;padding:14px;text-shadow:0 2px 3px #000}
+    h1{margin:0;font-size:25px;letter-spacing:1px}
+    #level{color:#ffe28a;font-weight:bold}
+    #score{position:absolute;right:14px;top:14px;text-align:right;font-size:17px;font-weight:bold}
+    #message{position:absolute;top:76px;left:0;right:0;text-align:center;color:#ffe28a;font-size:20px;font-weight:bold;opacity:0;transition:.2s}
+    #panel{position:fixed;left:8px;right:8px;bottom:9px;padding:9px;background:#162026ed;border:1px solid #8f8368;border-radius:15px}
+    #info{margin:0 0 7px;color:#eee0bc;font-size:13px;font-weight:bold}
+    #faces{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+    .face{height:47px;border:2px solid #656565;border-radius:8px;background-image:url("assets/79d88d54-4b24-434e-b227-df84f29aeec6.png");background-size:500% 300%;background-repeat:no-repeat;background-color:#333}
+    .face.active{border-color:#ffe176;box-shadow:0 0 9px #f6c94a}
+    #buttons{display:flex;gap:7px;margin-top:9px}
+    button{flex:1;border:0;border-radius:10px;padding:14px 4px;background:#61462f;color:#fff;font-weight:bold;font-size:14px;box-shadow:0 3px 0 #2a1d13}
+    button:active{transform:translateY(3px);box-shadow:none}
+    #throw{background:#93452e} #restart{background:#3c6074;max-width:82px}
   </style>
 </head>
 <body>
@@ -48,7 +33,7 @@
   </div>
 
   <div id="panel">
-    <p id="info">Изабери лика. Помери га и баци камен у бели круг.</p>
+    <p id="info">Ликови ходају у кругу. Изабери једног, помери га и баци камен у бели круг.</p>
     <div id="faces"></div>
     <div id="buttons">
       <button id="left">◀ ЛЕВО</button>
@@ -63,54 +48,62 @@
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x91a6ab);
-    scene.fog = new THREE.Fog(0x91a6ab, 18, 50);
+    scene.fog = new THREE.Fog(0x91a6ab,18,50);
 
-    const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 100);
-    camera.position.set(0, 10, 19);
-    camera.lookAt(0, 0, 0);
+    const camera = new THREE.PerspectiveCamera(52,innerWidth/innerHeight,0.1,100);
+    camera.position.set(0,10,19);
+    camera.lookAt(0,0,0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias:true });
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setPixelRatio(Math.min(devicePixelRatio,2));
     renderer.shadowMap.enabled = true;
     document.body.appendChild(renderer.domElement);
 
-    scene.add(new THREE.HemisphereLight(0xfff1d1, 0x2a342e, 2));
+    scene.add(new THREE.HemisphereLight(0xfff1d1,0x2a342e,2));
 
-    const sun = new THREE.DirectionalLight(0xffe3a9, 2);
-    sun.position.set(-9, 15, 8);
+    const sun = new THREE.DirectionalLight(0xffe3a9,2);
+    sun.position.set(-9,15,8);
     sun.castShadow = true;
     scene.add(sun);
 
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(55, 45),
-      new THREE.MeshStandardMaterial({ color:0x8a826b, roughness:1 })
+      new THREE.PlaneGeometry(55,45),
+      new THREE.MeshStandardMaterial({color:0x8a826b,roughness:1})
     );
-    ground.rotation.x = -Math.PI / 2;
+    ground.rotation.x = -Math.PI/2;
     ground.receiveShadow = true;
     scene.add(ground);
 
-    const wallMat = new THREE.MeshStandardMaterial({ color:0x6b6d69, roughness:1 });
+    const wallMat = new THREE.MeshStandardMaterial({color:0x6b6d69,roughness:1});
 
     [
-      [0, 2, -12, 25, 5, 0.7],
-      [0, 2, 10, 25, 5, 0.7],
-      [-12, 2, -1, 0.7, 5, 23],
-      [12, 2, -1, 0.7, 5, 23]
+      [0,2,-12,25,5,0.7],
+      [0,2,10,25,5,0.7],
+      [-12,2,-1,0.7,5,23],
+      [12,2,-1,0.7,5,23]
     ].forEach(([x,y,z,w,h,d]) => {
-      const wall = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), wallMat);
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wallMat);
       wall.position.set(x,y,z);
       wall.castShadow = true;
       wall.receiveShadow = true;
       scene.add(wall);
     });
 
-    const ring = new THREE.Mesh(
-      new THREE.RingGeometry(2.05, 2.42, 48),
-      new THREE.MeshStandardMaterial({ color:0xf8e9bc, side:THREE.DoubleSide })
+    const targetRing = new THREE.Mesh(
+      new THREE.RingGeometry(2.05,2.42,48),
+      new THREE.MeshStandardMaterial({color:0xf8e9bc,side:THREE.DoubleSide})
     );
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.03;
-    scene.add(ring);
+    targetRing.rotation.x = -Math.PI/2;
+    targetRing.position.y = 0.03;
+    scene.add(targetRing);
+
+    const selectionRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.72,0.9,28),
+      new THREE.MeshStandardMaterial({color:0xffd34d,side:THREE.DoubleSide})
+    );
+    selectionRing.rotation.x = -Math.PI/2;
+    selectionRing.position.y = 0.04;
+    scene.add(selectionRing);
 
     const pointsEl = document.querySelector("#points");
     const hitsEl = document.querySelector("#hits");
@@ -118,7 +111,10 @@
     const messageEl = document.querySelector("#message");
     const facesEl = document.querySelector("#faces");
 
-    let actors = [];
+    const actors = [];
+    const obstacleGroup = new THREE.Group();
+    scene.add(obstacleGroup);
+
     let player;
     let selected = 0;
     let lane = 0;
@@ -126,29 +122,27 @@
     let points = 0;
     let hits = 0;
     let level = 1;
+    let speed = 0.003;
 
-    function say(text) {
+    function say(text){
       messageEl.textContent = text;
       messageEl.style.opacity = "1";
       clearTimeout(say.timer);
-      say.timer = setTimeout(() => messageEl.style.opacity = "0", 1000);
+      say.timer = setTimeout(() => messageEl.style.opacity = "0",1100);
     }
 
-    function makeFaceTexture(sheet, number) {
+    function makeFaceTexture(sheet,number){
       const canvas = document.createElement("canvas");
       canvas.width = 128;
       canvas.height = 128;
-
       const col = number % 5;
       const row = Math.floor(number / 5);
 
       canvas.getContext("2d").drawImage(
         sheet,
-        col * sheet.width / 5,
-        row * sheet.height / 3,
-        sheet.width / 5,
-        sheet.height / 3,
-        0, 0, 128, 128
+        col*sheet.width/5,row*sheet.height/3,
+        sheet.width/5,sheet.height/3,
+        0,0,128,128
       );
 
       const texture = new THREE.CanvasTexture(canvas);
@@ -156,89 +150,139 @@
       return texture;
     }
 
-    function createActor(number, x, z, sheet) {
+    function createActor(number,sheet){
       const group = new THREE.Group();
 
       const uniform = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 1.45, 0.58),
-        new THREE.MeshStandardMaterial({ color:0x4c4d4b })
+        new THREE.BoxGeometry(1,1.45,0.58),
+        new THREE.MeshStandardMaterial({color:0x4c4d4b})
       );
       uniform.position.y = 1.25;
       uniform.castShadow = true;
 
       const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.48, 20, 16),
-        new THREE.MeshStandardMaterial({ map:makeFaceTexture(sheet, number) })
+        new THREE.SphereGeometry(0.48,20,16),
+        new THREE.MeshStandardMaterial({map:makeFaceTexture(sheet,number)})
       );
       head.position.y = 2.3;
       head.castShadow = true;
 
-      group.add(uniform, head);
-      group.position.set(x, 0, z);
-      group.userData = { phase:number * 0.7, number };
+      const stoneInHands = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.28),
+        new THREE.MeshStandardMaterial({color:0x544d44,roughness:1})
+      );
+      stoneInHands.position.set(0,1.15,0.48);
+      stoneInHands.castShadow = true;
+
+      group.add(uniform,head,stoneInHands);
+      group.userData = {
+        number,
+        theta:number/15*Math.PI*2,
+        step:number*.7,
+        carriedStone:stoneInHands
+      };
+
       scene.add(group);
       actors.push(group);
     }
 
-    function selectCharacter(number) {
+    function updateObstacles(){
+      while(obstacleGroup.children.length){
+        obstacleGroup.remove(obstacleGroup.children[0]);
+      }
+
+      const count = level - 1;
+      for(let i=0;i<count;i++){
+        const box = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2,1.1,1.2),
+          new THREE.MeshStandardMaterial({color:0x756042,roughness:1})
+        );
+        const angle = i/count*Math.PI*2 + 0.7;
+        box.position.set(Math.cos(angle)*4.3,0.55,Math.sin(angle)*2.8);
+        box.rotation.y = angle;
+        box.castShadow = true;
+        box.receiveShadow = true;
+        obstacleGroup.add(box);
+      }
+    }
+
+    function selectCharacter(number){
       selected = number;
       player = actors[number];
       lane = 0;
 
-      document.querySelectorAll(".face").forEach((button, index) => {
-        button.classList.toggle("active", index === number);
+      document.querySelectorAll(".face").forEach((button,index) => {
+        button.classList.toggle("active",index === number);
       });
 
       say("Лик је изабран");
     }
 
-    function buildGame(sheet) {
-      for (let i = 0; i < 15; i++) {
-        const angle = (i / 15) * Math.PI * 2;
-        const x = Math.cos(angle) * 7.5;
-        const z = Math.sin(angle) * 4.8 - 1;
-
-        createActor(i, x, z, sheet);
+    function buildGame(sheet){
+      for(let i=0;i<15;i++){
+        createActor(i,sheet);
 
         const faceButton = document.createElement("button");
         faceButton.className = i === 0 ? "face active" : "face";
         faceButton.style.backgroundPosition =
-          `${-(i % 5) * 100}% ${-Math.floor(i / 5) * 100}%`;
+          `${-(i%5)*100}% ${-Math.floor(i/5)*100}%`;
 
         faceButton.onclick = () => selectCharacter(i);
         facesEl.appendChild(faceButton);
       }
 
       player = actors[0];
+      updateObstacles();
     }
 
-    function move(direction) {
-      if (stone) return;
-
-      lane = Math.max(-1, Math.min(1, lane + direction));
-      player.position.x += direction * 2.3;
-      player.position.x = Math.max(-8, Math.min(8, player.position.x));
+    function move(direction){
+      if(stone) return;
+      lane = Math.max(-1,Math.min(1,lane+direction));
+      say(lane === 0 ? "Средња стаза" : lane < 0 ? "Унутрашња стаза" : "Спољна стаза");
     }
 
-    function throwStone() {
-      if (stone || hits >= 10) return;
+    function throwStone(){
+      if(stone) return;
 
       stone = new THREE.Mesh(
         new THREE.DodecahedronGeometry(0.34),
-        new THREE.MeshStandardMaterial({ color:0x514b42, roughness:1 })
+        new THREE.MeshStandardMaterial({color:0x514b42,roughness:1})
       );
 
       stone.position.copy(player.position);
-      stone.position.add(new THREE.Vector3(0, 1.8, -0.5));
+      stone.position.y = 1.8;
+      stone.position.z -= 0.35;
       stone.castShadow = true;
 
       stone.userData = {
         progress:0,
         start:stone.position.clone(),
-        target:new THREE.Vector3(lane * 0.3, 0.23, 0)
+        target:new THREE.Vector3(lane*0.32,0.23,0)
       };
 
+      player.userData.carriedStone.visible = false;
       scene.add(stone);
+    }
+
+    function finishHit(){
+      points += 100*level;
+      hits += 1;
+      pointsEl.textContent = points;
+      hitsEl.textContent = hits;
+
+      player.userData.carriedStone.visible = true;
+
+      if(hits >= 10){
+        level += 1;
+        hits = 0;
+        speed += 0.0008;
+        hitsEl.textContent = 0;
+        levelEl.textContent = "ДВОРИШТЕ " + level;
+        updateObstacles();
+        say("НОВО ДВОРИШТЕ! ВИШЕ ПРЕПРЕКА.");
+      } else {
+        say("ПОГОДАК У КРУГ!");
+      }
     }
 
     document.querySelector("#left").onclick = () => move(-1);
@@ -249,35 +293,41 @@
       points = 0;
       hits = 0;
       level = 1;
+      speed = 0.003;
       lane = 0;
 
-      pointsEl.textContent = "0";
-      hitsEl.textContent = "0";
+      pointsEl.textContent = 0;
+      hitsEl.textContent = 0;
       levelEl.textContent = "ДВОРИШТЕ 1";
 
-      actors.forEach((actor, i) => {
-        const angle = (i / 15) * Math.PI * 2;
-        actor.position.set(Math.cos(angle) * 7.5, 0, Math.sin(angle) * 4.8 - 1);
+      actors.forEach((actor,index) => {
+        actor.userData.theta = index/15*Math.PI*2;
+        actor.userData.carriedStone.visible = true;
       });
 
-      player = actors[selected];
+      if(stone){
+        scene.remove(stone);
+        stone = null;
+      }
+
+      updateObstacles();
       say("Игра поново почиње");
     };
 
-    function resize() {
-      camera.aspect = innerWidth / innerHeight;
+    function resize(){
+      camera.aspect = innerWidth/innerHeight;
       camera.updateProjectionMatrix();
-      renderer.setSize(innerWidth, innerHeight);
+      renderer.setSize(innerWidth,innerHeight);
     }
 
-    addEventListener("resize", resize);
+    addEventListener("resize",resize);
     resize();
 
     const image = new Image();
 
     image.onload = () => {
       buildGame(image);
-      say("Изабери лика и почни");
+      say("Ликови су у кругу. Изабери једног.");
     };
 
     image.onerror = () => {
@@ -286,43 +336,48 @@
 
     image.src = "assets/79d88d54-4b24-434e-b227-df84f29aeec6.png";
 
-    function animate(time) {
+    function animate(time){
       requestAnimationFrame(animate);
 
       actors.forEach(actor => {
-        if (actor !== player) {
-          actor.rotation.y = Math.sin(time / 700 + actor.userData.phase) * 0.45;
+        actor.userData.theta += speed;
+
+        const isPlayer = actor === player;
+        const radius = 7.3 + (isPlayer ? lane*1.25 : 0);
+
+        actor.position.x = Math.cos(actor.userData.theta)*radius;
+        actor.position.z = Math.sin(actor.userData.theta)*4.7-1;
+        actor.rotation.y = -actor.userData.theta + Math.PI/2;
+
+        const walking = Math.sin(time/100 + actor.userData.step);
+        actor.position.y = Math.abs(walking)*0.06;
+        actor.children[0].rotation.z = walking*0.05;
+
+        if(isPlayer){
+          selectionRing.position.x = actor.position.x;
+          selectionRing.position.z = actor.position.z;
         }
       });
 
-      if (stone) {
+      targetRing.rotation.z += 0.003;
+
+      if(stone){
         stone.userData.progress += 0.034;
-        const progress = Math.min(stone.userData.progress, 1);
+        const progress = Math.min(stone.userData.progress,1);
 
-        stone.position.lerpVectors(stone.userData.start, stone.userData.target, progress);
-        stone.position.y += Math.sin(progress * Math.PI) * 3.2;
+        stone.position.lerpVectors(stone.userData.start,stone.userData.target,progress);
+        stone.position.y += Math.sin(progress*Math.PI)*3.3;
+        stone.rotation.x += 0.18;
+        stone.rotation.z += 0.14;
 
-        if (progress === 1) {
-          points += 100;
-          hits += 1;
-
-          pointsEl.textContent = points;
-          hitsEl.textContent = hits;
-
-          if (hits === 10) {
-            level += 1;
-            levelEl.textContent = "ДВОРИШТЕ " + level;
-            say("НИВО ЗАВРШЕН!");
-          } else {
-            say("ПОГОДАК У КРУГ!");
-          }
-
+        if(progress === 1){
           scene.remove(stone);
           stone = null;
+          finishHit();
         }
       }
 
-      renderer.render(scene, camera);
+      renderer.render(scene,camera);
     }
 
     animate(0);
